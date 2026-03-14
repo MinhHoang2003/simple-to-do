@@ -8,11 +8,13 @@ import com.product.hstudio.simpletodo.domain.usecase.DeleteTodoUseCase
 import com.product.hstudio.simpletodo.domain.usecase.GetTodosUseCase
 import com.product.hstudio.simpletodo.domain.usecase.ToggleTodoUseCase
 import com.product.hstudio.simpletodo.domain.usecase.UpdateTodoUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class TodoListUiState(
     val todos: List<Todo> = emptyList(),
@@ -21,7 +23,8 @@ data class TodoListUiState(
     val deletedTodo: Todo? = null
 )
 
-class TodoViewModel(
+@HiltViewModel
+class TodoViewModel @Inject constructor(
     private val getTodosUseCase: GetTodosUseCase,
     private val addTodoUseCase: AddTodoUseCase,
     private val updateTodoUseCase: UpdateTodoUseCase,
