@@ -1,31 +1,67 @@
 package com.product.hstudio.simpletodo.ui
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.product.hstudio.simpletodo.data.Todo
-import com.product.hstudio.simpletodo.data.TodoDatabase
-import com.product.hstudio.simpletodo.data.TodoRepository
+import com.product.hstudio.simpletodo.domain.model.Todo
+import com.product.hstudio.simpletodo.domain.usecase.AddTodoUseCase
+import com.product.hstudio.simpletodo.domain.usecase.DeleteTodoUseCase
+import com.product.hstudio.simpletodo.domain.usecase.GetTodosUseCase
+import com.product.hstudio.simpletodo.domain.usecase.ToggleTodoUseCase
+import com.product.hstudio.simpletodo.domain.usecase.UpdateTodoUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class TodoViewModel(application: Application) : AndroidViewModel(application) {
+data class TodoListUiState(
+    val todos: List<Todo> = emptyList(),
+    val showDialog: Boolean = false,
+    val editingTodo: Todo? = null,
+    val deletedTodo: Todo? = null
+)
 
-    private val repository: TodoRepository
-    val allTodos: LiveData<List<Todo>>
+class TodoViewModel(
+    private val getTodosUseCase: GetTodosUseCase,
+    private val addTodoUseCase: AddTodoUseCase,
+    private val updateTodoUseCase: UpdateTodoUseCase,
+    private val deleteTodoUseCase: DeleteTodoUseCase,
+    private val toggleTodoUseCase: ToggleTodoUseCase
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(TodoListUiState())
+    val uiState: StateFlow<TodoListUiState> = _uiState.asStateFlow()
 
     init {
-        val dao = TodoDatabase.getDatabase(application).todoDao()
-        repository = TodoRepository(dao)
-        allTodos = repository.allTodos.asLiveData()
+        viewModelScope.launch {
+            getTodosUseCase().collect { todos ->
+                _uiState.update { it.copy(todos = todos) }
+            }
+        }
     }
 
-    fun insert(todo: Todo) = viewModelScope.launch { repository.insert(todo) }
+    fun showAddDialog() = _uiState.update { it.copy(showDialog = true, editingTodo = null) }
 
-    fun update(todo: Todo) = viewModelScope.launch { repository.update(todo) }
+    fun showEditDialog(todo: Todo) = _uiState.update { it.copy(showDialog = true, editingTodo = todo) }
 
-    fun delete(todo: Todo) = viewModelScope.launch { repository.delete(todo) }
+    fun dismissDialog() = _uiState.update { it.copy(showDialog = false, editingTodo = null) }
 
-    fun toggleComplete(todo: Todo) = update(todo.copy(isCompleted = !todo.isCompleted))
+    fun saveTodo(todo: Todo) = viewModelScope.launch {
+        if (todo.id == 0) addTodoUseCase(todo) else updateTodoUseCase(todo)
+        dismissDialog()
+    }
+
+    fun deleteTodo(todo: Todo) = viewModelScope.launch {
+        deleteTodoUseCase(todo)
+        _uiState.update { it.copy(deletedTodo = todo) }
+    }
+
+    fun undoDelete(todo: Todo) = viewModelScope.launch {
+        addTodoUseCase(todo)
+        _uiState.update { it.copy(deletedTodo = null) }
+    }
+
+    fun clearDeletedTodo() = _uiState.update { it.copy(deletedTodo = null) }
+
+    fun toggleComplete(todo: Todo) = viewModelScope.launch { toggleTodoUseCase(todo) }
 }

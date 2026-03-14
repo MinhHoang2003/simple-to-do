@@ -1,13 +1,13 @@
-package com.product.hstudio.simpletodo.data
+package com.product.hstudio.simpletodo.data.local.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import com.product.hstudio.simpletodo.data.local.dao.TodoDao
+import com.product.hstudio.simpletodo.data.local.entity.TodoEntity
 
-@Database(entities = [Todo::class], version = 1)
-@TypeConverters(Converters::class)
+@Database(entities = [TodoEntity::class], version = 1)
 abstract class TodoDatabase : RoomDatabase() {
 
     abstract fun todoDao(): TodoDao
@@ -22,7 +22,7 @@ abstract class TodoDatabase : RoomDatabase() {
                     context.applicationContext,
                     TodoDatabase::class.java,
                     "todo_database"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## App architect design
+
+Using MVVM with clean, every business logic must using Use Case
+
+1. data package - contain logic for data model handling (Using Room database)
+2. domain package - contain logic for business (UseCase + Repository patter)
+3. ui package - contain the UI logic (using Compose UI)
+
 ## Build Commands
 
 ```bash
