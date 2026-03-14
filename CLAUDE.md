@@ -2,13 +2,61 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## App architect design
+## Architecture
 
-Using MVVM with clean, every business logic must using Use Case
+MVVM + Clean Architecture. Every business logic must go through a Use Case.
 
-1. data package - contain logic for data model handling (Using Room database)
-2. domain package - contain logic for business (UseCase + Repository patter)
-3. ui package - contain the UI logic (using Compose UI)
+### Packages
+
+**`data`** — data sources only (Room DB, future network). No business logic.
+- `data/local/entity/` — Room entities + `toDomain()` / `toEntity()` mapper extensions
+- `data/local/dao/` — Room DAOs (operate on entities only)
+- `data/local/database/` — `TodoDatabase` singleton
+- `data/repository/` — `TodoRepositoryImpl` implementing the domain interface
+
+**`domain`** — pure Kotlin, zero Android/Room imports.
+- `domain/model/` — `Todo`, `Priority` (plain data classes/enums)
+- `domain/repository/` — `TodoRepository` interface
+- `domain/usecase/` — one class per use case (`GetTodosUseCase`, `AddTodoUseCase`, `UpdateTodoUseCase`, `DeleteTodoUseCase`, `ToggleTodoUseCase`)
+
+**`ui`** — Jetpack Compose only, no XML layouts.
+- `ui/screen/` — full screens (`TodoListScreen`)
+- `ui/screen/component/` — reusable composables (`TodoItem`, `AddEditTodoDialog`)
+- `ui/theme/` — `SimpleTodoTheme` (Material3, dynamic color on Android 12+)
+- `ui/TodoViewModel.kt` — `@HiltViewModel`, exposes `StateFlow<TodoListUiState>`
+
+**`di`** — Hilt dependency injection.
+- `di/AppModule.kt` — `@Singleton` providers: `TodoDatabase`, `TodoDao`, `TodoRepository`
+
+### Key design decisions
+
+- `Todo` domain model is pure Kotlin — no `@Parcelize`, no Room annotations
+- `priority` stored as `String` (enum name) in `TodoEntity` — no `TypeConverter` needed
+- Sorting (by completion → priority → createdAt) done in `GetTodosUseCase`, not SQL
+- Dependency direction: `ui` → `domain` ← `data`. `domain` never imports `data` or `ui`
+- `TodoListUiState.deletedTodo` drives the Snackbar undo flow in `TodoListScreen`
+
+### Dependency injection (Hilt)
+
+- `SimpleTodoApplication` is annotated `@HiltAndroidApp`
+- `MainActivity` is annotated `@AndroidEntryPoint`
+- `TodoViewModel` uses `@HiltViewModel` + `@Inject constructor`
+- All use cases use `@Inject constructor`
+- `TodoListScreen` obtains its ViewModel via `hiltViewModel()`
+- `AppModule` uses `@Provides` (not `@Binds`) for all bindings — keep this consistent
+
+## Tech Stack
+
+| Layer | Library |
+|---|---|
+| Language | Kotlin 2.0.21 |
+| UI | Jetpack Compose + Material3 (BOM 2024.12.01) |
+| DI | Hilt 2.51.1 |
+| Database | Room 2.6.1 (KSP) |
+| Async | Kotlin Coroutines + StateFlow |
+| Lifecycle | Lifecycle 2.8.7 (viewmodel-compose, runtime-compose) |
+| Min SDK | 26 (Android 8.0) |
+| Target SDK | 36 (Android 15) |
 
 ## Build Commands
 
@@ -32,24 +80,9 @@ Using MVVM with clean, every business logic must using Use Case
 ./gradlew clean
 ```
 
-## Architecture
-
-Single-module Android app (`com.product.hstudio.simpletodo`) using:
-- **Language:** Kotlin 2.0.21
-- **UI:** Material Design Components (DayNight theme with light/dark support)
-- **Min SDK:** 26 (Android 8.0), **Target SDK:** 36 (Android 15)
-- **Java/Kotlin JVM target:** 11
-
-## Project Structure
-
-- `app/src/main/` — Application source; Java package is currently empty (starter template)
-- `app/src/test/` — JUnit 4 unit tests
-- `app/src/androidTest/` — Espresso instrumented tests
-- `gradle/libs.versions.toml` — Centralized version catalog for all dependencies
-- `app/build.gradle.kts` — App module config (SDK versions, dependencies)
-
 ## Key Notes
 
-- Dependency versions are managed centrally in `gradle/libs.versions.toml` — add new deps there first
-- ProGuard/R8 minification is disabled for release builds; enable `isMinifyEnabled` in `app/build.gradle.kts` when needed
-- No activities are defined yet in `AndroidManifest.xml` — this is a fresh starter template
+- All dependency versions are managed in `gradle/libs.versions.toml` — add new deps there first
+- `TodoDatabase` uses `fallbackToDestructiveMigration()` during development; add proper migrations before release
+- ProGuard/R8 minification is disabled; enable `isMinifyEnabled` in `app/build.gradle.kts` before release
+- Dynamic color (Material You) is enabled on Android 12+ via `dynamicDarkColorScheme` / `dynamicLightColorScheme`
