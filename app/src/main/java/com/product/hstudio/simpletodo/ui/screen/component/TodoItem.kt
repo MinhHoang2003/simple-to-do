@@ -1,22 +1,23 @@
 package com.product.hstudio.simpletodo.ui.screen.component
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -28,14 +29,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import com.product.hstudio.simpletodo.domain.model.Priority
+import com.product.hstudio.simpletodo.R
 import com.product.hstudio.simpletodo.domain.model.Todo
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TodoItem(
     todo: Todo,
@@ -53,9 +57,15 @@ fun TodoItem(
         }
     )
 
+    val timeString = todo.dueDate?.let { millis ->
+        val localTime = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime()
+        if (localTime == LocalTime.MIDNIGHT) null
+        else localTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+    }
+
     SwipeToDismissBox(
         state = dismissState,
-        modifier = modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier = modifier,
         backgroundContent = {
             val color by animateColorAsState(
                 targetValue = when (dismissState.targetValue) {
@@ -67,76 +77,54 @@ fun TodoItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(color),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.CenterEnd
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
+                    contentDescription = stringResource(R.string.cd_delete),
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(end = 16.dp)
                 )
             }
         }
     ) {
-        ElevatedCard(
-            onClick = onEdit,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(onClick = {}, onLongClick = onEdit)
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(4.dp)
-                        .height(48.dp)
-                        .background(
-                            color = priorityColor(todo.priority),
-                            shape = RoundedCornerShape(2.dp)
-                        )
+            IconButton(onClick = onToggleComplete) {
+                Icon(
+                    imageVector = if (todo.isCompleted) Icons.Filled.CheckCircle
+                    else Icons.Outlined.RadioButtonUnchecked,
+                    contentDescription = stringResource(R.string.cd_toggle_complete),
+                    tint = if (todo.isCompleted) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outline
                 )
-                Spacer(Modifier.width(12.dp))
-                Checkbox(
-                    checked = todo.isCompleted,
-                    onCheckedChange = { onToggleComplete() }
+            }
+            Text(
+                text = todo.title,
+                style = MaterialTheme.typography.bodyLarge,
+                textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else null,
+                color = if (todo.isCompleted)
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                else
+                    MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            if (timeString != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = timeString,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = todo.title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else null,
-                        color = if (todo.isCompleted)
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        else
-                            MaterialTheme.colorScheme.onSurface
-                    )
-                    if (todo.description.isNotEmpty()) {
-                        Text(
-                            text = todo.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    todo.dueDate?.let { date ->
-                        Text(
-                            text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-                                .format(Date(date)),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
         }
     }
-}
-
-@Composable
-private fun priorityColor(priority: Priority): Color = when (priority) {
-    Priority.LOW -> Color(0xFF4CAF50)
-    Priority.MEDIUM -> Color(0xFFFF9800)
-    Priority.HIGH -> Color(0xFFF44336)
 }

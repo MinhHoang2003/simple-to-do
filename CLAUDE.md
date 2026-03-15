@@ -80,6 +80,11 @@ MVVM + Clean Architecture. Every business logic must go through a Use Case.
 ./gradlew clean
 ```
 
+## UI Strings
+
+- All text content displayed on the UI must be defined in `app/src/main/res/values/strings.xml`
+- Never hardcode strings directly in composables — always use `stringResource(R.string.xxx)`
+
 ## Key Notes
 
 - All dependency versions are managed in `gradle/libs.versions.toml` — add new deps there first

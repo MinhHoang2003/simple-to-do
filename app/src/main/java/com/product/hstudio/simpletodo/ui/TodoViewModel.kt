@@ -14,13 +14,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 
 data class TodoListUiState(
     val todos: List<Todo> = emptyList(),
     val showDialog: Boolean = false,
     val editingTodo: Todo? = null,
-    val deletedTodo: Todo? = null
+    val deletedTodo: Todo? = null,
+    val selectedTab: Int = 0,
+    val selectedDayEpochDay: Long = LocalDate.now().toEpochDay(),
+    val preFillDate: Long? = null
 )
 
 @HiltViewModel
@@ -43,11 +48,33 @@ class TodoViewModel @Inject constructor(
         }
     }
 
-    fun showAddDialog() = _uiState.update { it.copy(showDialog = true, editingTodo = null) }
+    fun selectTab(tab: Int) = _uiState.update {
+        it.copy(
+            selectedTab = tab,
+            selectedDayEpochDay = if (tab == 0) LocalDate.now().toEpochDay() else it.selectedDayEpochDay
+        )
+    }
 
-    fun showEditDialog(todo: Todo) = _uiState.update { it.copy(showDialog = true, editingTodo = todo) }
+    fun selectDay(epochDay: Long) = _uiState.update { it.copy(selectedDayEpochDay = epochDay) }
 
-    fun dismissDialog() = _uiState.update { it.copy(showDialog = false, editingTodo = null) }
+    fun showAddDialog() = _uiState.update {
+        it.copy(showDialog = true, editingTodo = null, preFillDate = null)
+    }
+
+    fun showAddDialogForDay(epochDay: Long) {
+        val midnight = LocalDate.ofEpochDay(epochDay)
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant().toEpochMilli()
+        _uiState.update { it.copy(showDialog = true, editingTodo = null, preFillDate = midnight) }
+    }
+
+    fun showEditDialog(todo: Todo) = _uiState.update {
+        it.copy(showDialog = true, editingTodo = todo, preFillDate = null)
+    }
+
+    fun dismissDialog() = _uiState.update {
+        it.copy(showDialog = false, editingTodo = null, preFillDate = null)
+    }
 
     fun saveTodo(todo: Todo) = viewModelScope.launch {
         if (todo.id == 0) addTodoUseCase(todo) else updateTodoUseCase(todo)
@@ -65,6 +92,13 @@ class TodoViewModel @Inject constructor(
     }
 
     fun clearDeletedTodo() = _uiState.update { it.copy(deletedTodo = null) }
+
+    fun quickAddTodo(title: String, epochDay: Long) = viewModelScope.launch {
+        val dueDate = LocalDate.ofEpochDay(epochDay)
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant().toEpochMilli()
+        addTodoUseCase(Todo(title = title, dueDate = dueDate))
+    }
 
     fun toggleComplete(todo: Todo) = viewModelScope.launch { toggleTodoUseCase(todo) }
 }
