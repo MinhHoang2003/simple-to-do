@@ -1,4 +1,4 @@
-package com.product.hstudio.simpletodo.ui.screen
+package com.product.hstudio.simpletodo.ui.todolist
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,12 +47,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.product.hstudio.simpletodo.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.product.hstudio.simpletodo.ui.TodoViewModel
-import com.product.hstudio.simpletodo.ui.screen.component.AddEditTodoDialog
-import com.product.hstudio.simpletodo.ui.screen.component.TodoItem
+import com.product.hstudio.simpletodo.R
+import com.product.hstudio.simpletodo.ui.todolist.component.AddEditTodoDialog
+import com.product.hstudio.simpletodo.ui.todolist.component.TodoItem
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate

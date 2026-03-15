@@ -1,4 +1,4 @@
-package com.product.hstudio.simpletodo.ui.screen.component
+package com.product.hstudio.simpletodo.ui.todolist.component
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi

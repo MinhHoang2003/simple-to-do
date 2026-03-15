@@ -1,4 +1,4 @@
-package com.product.hstudio.simpletodo.ui.screen
+package com.product.hstudio.simpletodo.ui.statistics
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -46,9 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.product.hstudio.simpletodo.R
-import com.product.hstudio.simpletodo.ui.DailyStat
-import com.product.hstudio.simpletodo.ui.StatisticsUiState
-import com.product.hstudio.simpletodo.ui.StatisticsViewModel
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -324,7 +321,6 @@ private fun DailyBarChart(dailyStats: List<DailyStat>) {
             val y = chartHeight - (tick.toFloat() / maxTotal * chartHeight)
             val measured = textMeasurer.measure(tick.toString(), labelTextStyle)
 
-            // Label (right-aligned against the y-axis)
             drawText(
                 textLayoutResult = measured,
                 topLeft = Offset(
@@ -333,7 +329,6 @@ private fun DailyBarChart(dailyStats: List<DailyStat>) {
                 )
             )
 
-            // Grid line: solid for baseline (0), dashed for the rest
             drawLine(
                 color = if (tick == 0) axisColor else gridColor,
                 start = Offset(yAxisWidth, y),
@@ -359,7 +354,6 @@ private fun DailyBarChart(dailyStats: List<DailyStat>) {
         dailyStats.forEachIndexed { index, stat ->
             val x = yAxisWidth + index * barAreaWidth + barOffset
 
-            // Total bar (gray background)
             val totalH = (stat.total.toFloat() / maxTotal * chartHeight)
                 .let { if (stat.total > 0) it.coerceAtLeast(minBarPx) else it }
             if (totalH > 0f) {
@@ -371,7 +365,6 @@ private fun DailyBarChart(dailyStats: List<DailyStat>) {
                 )
             }
 
-            // Completed bar (colored foreground)
             val completedH = (stat.completed.toFloat() / maxTotal * chartHeight)
                 .let { if (stat.completed > 0) it.coerceAtLeast(minBarPx) else it }
             if (completedH > 0f) {
@@ -383,7 +376,6 @@ private fun DailyBarChart(dailyStats: List<DailyStat>) {
                 )
             }
 
-            // Day labels: 1, 5, 10, 15, 20, 25, last day
             if (stat.day == 1 || stat.day % 5 == 0 || index == dailyStats.lastIndex) {
                 val measured = textMeasurer.measure(stat.day.toString(), labelTextStyle)
                 drawText(

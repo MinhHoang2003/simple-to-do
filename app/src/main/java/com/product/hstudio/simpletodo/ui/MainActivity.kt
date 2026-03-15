@@ -7,8 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.product.hstudio.simpletodo.ui.screen.StatisticsScreen
-import com.product.hstudio.simpletodo.ui.screen.TodoListScreen
+import com.product.hstudio.simpletodo.ui.statistics.StatisticsScreen
+import com.product.hstudio.simpletodo.ui.todolist.TodoListScreen
 import com.product.hstudio.simpletodo.ui.theme.SimpleTodoTheme
 import dagger.hilt.android.AndroidEntryPoint
 

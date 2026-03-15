@@ -1,4 +1,4 @@
-package com.product.hstudio.simpletodo.ui
+package com.product.hstudio.simpletodo.ui.statistics
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
