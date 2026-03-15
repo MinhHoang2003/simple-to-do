@@ -36,7 +36,9 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -295,27 +297,67 @@ private fun LegendDot(color: Color, label: String) {
 private fun DailyBarChart(dailyStats: List<DailyStat>) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val axisColor = MaterialTheme.colorScheme.outline
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
     val labelTextStyle = MaterialTheme.typography.labelSmall.copy(
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
     val textMeasurer = rememberTextMeasurer()
     val maxTotal = dailyStats.maxOfOrNull { it.total }?.coerceAtLeast(1) ?: 1
+    val yTicks = listOf(0, maxTotal / 2, maxTotal).distinct()
+    val dashEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f))
 
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp)
+            .height(180.dp)
     ) {
-        val labelHeight = 18.dp.toPx()
-        val chartHeight = size.height - labelHeight
-        val barAreaWidth = size.width / dailyStats.size
-        val barWidth = (barAreaWidth * 0.6f).coerceAtLeast(4f)
-        val barOffset = (barAreaWidth - barWidth) / 2
+        val dayLabelHeight = 18.dp.toPx()
+        val yAxisWidth = 28.dp.toPx()
+        val chartHeight = size.height - dayLabelHeight
+        val chartWidth = size.width - yAxisWidth
         val minBarPx = 4.dp.toPx()
         val cornerRadius = CornerRadius(3.dp.toPx())
 
+        // Y-axis labels + horizontal grid lines
+        yTicks.forEach { tick ->
+            val y = chartHeight - (tick.toFloat() / maxTotal * chartHeight)
+            val measured = textMeasurer.measure(tick.toString(), labelTextStyle)
+
+            // Label (right-aligned against the y-axis)
+            drawText(
+                textLayoutResult = measured,
+                topLeft = Offset(
+                    x = yAxisWidth - measured.size.width - 4.dp.toPx(),
+                    y = y - measured.size.height / 2f
+                )
+            )
+
+            // Grid line: solid for baseline (0), dashed for the rest
+            drawLine(
+                color = if (tick == 0) axisColor else gridColor,
+                start = Offset(yAxisWidth, y),
+                end = Offset(size.width, y),
+                strokeWidth = if (tick == 0) 1.5.dp.toPx() else 1.dp.toPx(),
+                pathEffect = if (tick == 0) null else dashEffect
+            )
+        }
+
+        // Vertical y-axis line
+        drawLine(
+            color = axisColor,
+            start = Offset(yAxisWidth, 0f),
+            end = Offset(yAxisWidth, chartHeight),
+            strokeWidth = 1.5.dp.toPx()
+        )
+
+        // Bars
+        val barAreaWidth = chartWidth / dailyStats.size
+        val barWidth = (barAreaWidth * 0.6f).coerceAtLeast(4f)
+        val barOffset = (barAreaWidth - barWidth) / 2
+
         dailyStats.forEachIndexed { index, stat ->
-            val x = index * barAreaWidth + barOffset
+            val x = yAxisWidth + index * barAreaWidth + barOffset
 
             // Total bar (gray background)
             val totalH = (stat.total.toFloat() / maxTotal * chartHeight)
@@ -341,14 +383,14 @@ private fun DailyBarChart(dailyStats: List<DailyStat>) {
                 )
             }
 
-            // Day labels: 1, 5, 10, 15, 20, 25, and last day
+            // Day labels: 1, 5, 10, 15, 20, 25, last day
             if (stat.day == 1 || stat.day % 5 == 0 || index == dailyStats.lastIndex) {
                 val measured = textMeasurer.measure(stat.day.toString(), labelTextStyle)
                 drawText(
                     textLayoutResult = measured,
                     topLeft = Offset(
                         x = (x + barWidth / 2 - measured.size.width / 2)
-                            .coerceIn(0f, size.width - measured.size.width),
+                            .coerceIn(yAxisWidth, size.width - measured.size.width),
                         y = chartHeight + 2.dp.toPx()
                     )
                 )
