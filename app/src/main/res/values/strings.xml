@@ -30,4 +30,16 @@
     <string name="add_task_for_day">Add a task for %1$s\u2026</string>
     <string name="date_header">— %1$s, %2$s —</string>
     <string name="progress_label">%1$d / %2$d done</string>
+    <string name="cd_statistics">Statistics</string>
+    <string name="stat_screen_title">Statistics</string>
+    <string name="stat_total_tasks">Total</string>
+    <string name="stat_completed">Completed</string>
+    <string name="stat_completion_rate">Rate</string>
+    <string name="stat_priority_breakdown">By Priority</string>
+    <string name="stat_daily_breakdown">Daily Tasks</string>
+    <string name="stat_no_tasks_month">No tasks this month</string>
+    <string name="stat_rate_format">%1$d%%</string>
+    <string name="cd_previous_month">Previous month</string>
+    <string name="cd_next_month">Next month</string>
+    <string name="cd_back">Back</string>
 </resources>

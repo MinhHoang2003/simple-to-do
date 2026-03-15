@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,7 +62,10 @@ import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
 @Composable
-fun TodoListScreen(viewModel: TodoViewModel = hiltViewModel()) {
+fun TodoListScreen(
+    onNavigateToStats: () -> Unit,
+    viewModel: TodoViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -114,11 +118,24 @@ fun TodoListScreen(viewModel: TodoViewModel = hiltViewModel()) {
         ) {
             Spacer(Modifier.height(32.dp))
 
-            Text(
-                text = stringResource(R.string.title_todo),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.title_todo),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onNavigateToStats) {
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = stringResource(R.string.cd_statistics),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
 
