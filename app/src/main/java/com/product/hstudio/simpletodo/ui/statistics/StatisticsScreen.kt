@@ -376,7 +376,8 @@ private fun DailyBarChart(dailyStats: List<DailyStat>) {
                 )
             }
 
-            if (stat.day == 1 || stat.day % 5 == 0 || index == dailyStats.lastIndex) {
+            val isLast = index == dailyStats.lastIndex
+            if (stat.day == 1 || stat.day % 5 == 0 || (isLast && stat.day % 5 >= 3)) {
                 val measured = textMeasurer.measure(stat.day.toString(), labelTextStyle)
                 drawText(
                     textLayoutResult = measured,
