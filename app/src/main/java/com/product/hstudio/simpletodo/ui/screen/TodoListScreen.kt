@@ -83,15 +83,6 @@ fun TodoListScreen(
 
     val weekStart = remember(today) { today.with(DayOfWeek.MONDAY) }
     val weekDays = remember(weekStart) { (0..6).map { weekStart.plusDays(it.toLong()) } }
-    val countPerDay = remember(uiState.todos, weekDays) {
-        weekDays.map { day ->
-            uiState.todos.count { todo ->
-                todo.dueDate?.let { millis ->
-                    Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate() == day
-                } ?: false
-            }
-        }
-    }
 
     LaunchedEffect(uiState.deletedTodo) {
         uiState.deletedTodo?.let { deleted ->
@@ -149,7 +140,6 @@ fun TodoListScreen(
             if (uiState.selectedTab == 1) {
                 WeekStrip(
                     weekDays = weekDays,
-                    counts = countPerDay,
                     selectedDay = selectedDate,
                     onDaySelected = { viewModel.selectDay(it.toEpochDay()) }
                 )
@@ -248,7 +238,6 @@ private fun TabBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
 @Composable
 private fun WeekStrip(
     weekDays: List<LocalDate>,
-    counts: List<Int>,
     selectedDay: LocalDate,
     onDaySelected: (LocalDate) -> Unit
 ) {
@@ -277,7 +266,7 @@ private fun WeekStrip(
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = counts[index].toString(),
+                    text = day.dayOfMonth.toString(),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
