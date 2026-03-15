@@ -2,11 +2,15 @@ package com.product.hstudio.simpletodo.ui.todolist
 
 import com.product.hstudio.simpletodo.domain.model.Priority
 import com.product.hstudio.simpletodo.domain.model.Todo
+import com.product.hstudio.simpletodo.domain.usecase.AddCategoryUseCase
 import com.product.hstudio.simpletodo.domain.usecase.AddTodoUseCase
+import com.product.hstudio.simpletodo.domain.usecase.DeleteCategoryUseCase
 import com.product.hstudio.simpletodo.domain.usecase.DeleteTodoUseCase
+import com.product.hstudio.simpletodo.domain.usecase.GetCategoriesUseCase
 import com.product.hstudio.simpletodo.domain.usecase.GetTodosUseCase
 import com.product.hstudio.simpletodo.domain.usecase.ToggleTodoUseCase
 import com.product.hstudio.simpletodo.domain.usecase.UpdateTodoUseCase
+import com.product.hstudio.simpletodo.fake.FakeCategoryRepository
 import com.product.hstudio.simpletodo.fake.FakeTodoRepository
 import com.product.hstudio.simpletodo.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,17 +32,22 @@ class TodoViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var repository: FakeTodoRepository
+    private lateinit var categoryRepository: FakeCategoryRepository
     private lateinit var viewModel: TodoViewModel
 
     @Before
     fun setUp() {
         repository = FakeTodoRepository()
+        categoryRepository = FakeCategoryRepository()
         viewModel = TodoViewModel(
             getTodosUseCase = GetTodosUseCase(repository),
             addTodoUseCase = AddTodoUseCase(repository),
             updateTodoUseCase = UpdateTodoUseCase(repository),
             deleteTodoUseCase = DeleteTodoUseCase(repository),
-            toggleTodoUseCase = ToggleTodoUseCase(repository)
+            toggleTodoUseCase = ToggleTodoUseCase(repository),
+            getCategoriesUseCase = GetCategoriesUseCase(categoryRepository),
+            addCategoryUseCase = AddCategoryUseCase(categoryRepository),
+            deleteCategoryUseCase = DeleteCategoryUseCase(categoryRepository)
         )
     }
 

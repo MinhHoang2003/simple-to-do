@@ -3,6 +3,7 @@ package com.product.hstudio.simpletodo.ui.todolist
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,9 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -20,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.product.hstudio.simpletodo.R
+import com.product.hstudio.simpletodo.domain.model.Category
 import com.product.hstudio.simpletodo.ui.todolist.component.AddEditTodoDialog
 import com.product.hstudio.simpletodo.ui.todolist.component.TodoItem
 import java.time.DayOfWeek
@@ -72,11 +78,18 @@ fun TodoListScreen(
     val today = LocalDate.now()
     val selectedDate = LocalDate.ofEpochDay(uiState.selectedDayEpochDay)
 
-    val filteredTodos = remember(uiState.todos, uiState.selectedDayEpochDay) {
+    val categoryColorMap = remember(uiState.categories) {
+        uiState.categories.associate { it.id to it.color }
+    }
+
+    val filteredTodos = remember(uiState.todos, uiState.selectedDayEpochDay, uiState.selectedCategoryFilter) {
         uiState.todos.filter { todo ->
-            todo.dueDate?.let { millis ->
+            val matchesDate = todo.dueDate?.let { millis ->
                 Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate() == selectedDate
             } ?: false
+            val matchesCategory = uiState.selectedCategoryFilter == null ||
+                    todo.categoryId == uiState.selectedCategoryFilter
+            matchesDate && matchesCategory
         }
     }
 
@@ -145,6 +158,15 @@ fun TodoListScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
+            if (uiState.categories.isNotEmpty()) {
+                CategoryFilterRow(
+                    categories = uiState.categories,
+                    selectedCategoryId = uiState.selectedCategoryFilter,
+                    onCategorySelected = { viewModel.selectCategoryFilter(it) }
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
             val dayName = selectedDate.dayOfWeek.getDisplayName(JavaTextStyle.SHORT, Locale.getDefault())
             val monthDay = selectedDate.format(DateTimeFormatter.ofPattern("MMM d"))
             Text(
@@ -163,7 +185,8 @@ fun TodoListScreen(
                         todo = todo,
                         onToggleComplete = { viewModel.toggleComplete(todo) },
                         onEdit = { viewModel.showEditDialog(todo) },
-                        onDelete = { viewModel.deleteTodo(todo) }
+                        onDelete = { viewModel.deleteTodo(todo) },
+                        categoryColor = categoryColorMap[todo.categoryId]
                     )
                 }
                 item {
@@ -194,9 +217,43 @@ fun TodoListScreen(
         AddEditTodoDialog(
             todo = uiState.editingTodo,
             initialDueDate = uiState.preFillDate,
+            categories = uiState.categories,
+            onCreateCategory = { viewModel.addCategory(it) },
             onDismiss = { viewModel.dismissDialog() },
             onSave = { viewModel.saveTodo(it) }
         )
+    }
+}
+
+@Composable
+private fun CategoryFilterRow(
+    categories: List<Category>,
+    selectedCategoryId: Int?,
+    onCategorySelected: (Int?) -> Unit
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item {
+            FilterChip(
+                selected = selectedCategoryId == null,
+                onClick = { onCategorySelected(null) },
+                label = { Text(stringResource(R.string.category_all)) }
+            )
+        }
+        items(categories) { category ->
+            FilterChip(
+                selected = selectedCategoryId == category.id,
+                onClick = { onCategorySelected(category.id) },
+                label = { Text(category.name) },
+                leadingIcon = {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(category.color))
+                    )
+                }
+            )
+        }
     }
 }
 
@@ -211,7 +268,7 @@ private fun TabBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
     ) {
         listOf(stringResource(R.string.tab_today), stringResource(R.string.tab_week)).forEachIndexed { index, label ->
             val isSelected = selectedTab == index
-            androidx.compose.foundation.layout.Box(
+            Box(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(6.dp))

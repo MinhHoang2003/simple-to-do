@@ -2,9 +2,13 @@ package com.product.hstudio.simpletodo.ui.todolist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.product.hstudio.simpletodo.domain.model.Category
 import com.product.hstudio.simpletodo.domain.model.Todo
+import com.product.hstudio.simpletodo.domain.usecase.AddCategoryUseCase
 import com.product.hstudio.simpletodo.domain.usecase.AddTodoUseCase
+import com.product.hstudio.simpletodo.domain.usecase.DeleteCategoryUseCase
 import com.product.hstudio.simpletodo.domain.usecase.DeleteTodoUseCase
+import com.product.hstudio.simpletodo.domain.usecase.GetCategoriesUseCase
 import com.product.hstudio.simpletodo.domain.usecase.GetTodosUseCase
 import com.product.hstudio.simpletodo.domain.usecase.ToggleTodoUseCase
 import com.product.hstudio.simpletodo.domain.usecase.UpdateTodoUseCase
@@ -20,6 +24,8 @@ import javax.inject.Inject
 
 data class TodoListUiState(
     val todos: List<Todo> = emptyList(),
+    val categories: List<Category> = emptyList(),
+    val selectedCategoryFilter: Int? = null,
     val showDialog: Boolean = false,
     val editingTodo: Todo? = null,
     val deletedTodo: Todo? = null,
@@ -34,7 +40,10 @@ class TodoViewModel @Inject constructor(
     private val addTodoUseCase: AddTodoUseCase,
     private val updateTodoUseCase: UpdateTodoUseCase,
     private val deleteTodoUseCase: DeleteTodoUseCase,
-    private val toggleTodoUseCase: ToggleTodoUseCase
+    private val toggleTodoUseCase: ToggleTodoUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val addCategoryUseCase: AddCategoryUseCase,
+    private val deleteCategoryUseCase: DeleteCategoryUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TodoListUiState())
@@ -44,6 +53,11 @@ class TodoViewModel @Inject constructor(
         viewModelScope.launch {
             getTodosUseCase().collect { todos ->
                 _uiState.update { it.copy(todos = todos) }
+            }
+        }
+        viewModelScope.launch {
+            getCategoriesUseCase().collect { categories ->
+                _uiState.update { it.copy(categories = categories) }
             }
         }
     }
@@ -56,6 +70,8 @@ class TodoViewModel @Inject constructor(
     }
 
     fun selectDay(epochDay: Long) = _uiState.update { it.copy(selectedDayEpochDay = epochDay) }
+
+    fun selectCategoryFilter(id: Int?) = _uiState.update { it.copy(selectedCategoryFilter = id) }
 
     fun showAddDialog() = _uiState.update {
         it.copy(showDialog = true, editingTodo = null, preFillDate = null)
@@ -101,4 +117,8 @@ class TodoViewModel @Inject constructor(
     }
 
     fun toggleComplete(todo: Todo) = viewModelScope.launch { toggleTodoUseCase(todo) }
+
+    fun addCategory(category: Category) = viewModelScope.launch { addCategoryUseCase(category) }
+
+    fun deleteCategory(category: Category) = viewModelScope.launch { deleteCategoryUseCase(category) }
 }

@@ -42,4 +42,16 @@
     <string name="cd_previous_month">Previous month</string>
     <string name="cd_next_month">Next month</string>
     <string name="cd_back">Back</string>
+    <string name="set_category">Set category</string>
+    <string name="cd_clear_category">Clear category</string>
+    <string name="category_all">All</string>
+    <string name="category_none">No category</string>
+    <string name="create_category">Create new category</string>
+    <string name="hint_category_name">Category name</string>
+    <string name="label_category_color">Pick a color</string>
+    <string name="category_picker_title">Select category</string>
+    <string name="create_category_title">New category</string>
+    <string name="cd_delete_category">Delete category</string>
+    <string name="delete_category_confirm_title">Delete category?</string>
+    <string name="delete_category_confirm_message">Todos in this category will be unassigned.</string>
 </resources>

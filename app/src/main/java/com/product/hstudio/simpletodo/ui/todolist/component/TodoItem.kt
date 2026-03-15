@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -46,7 +48,8 @@ fun TodoItem(
     onToggleComplete: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    categoryColor: Int? = null
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -97,6 +100,15 @@ fun TodoItem(
                 .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (categoryColor != null) {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color(categoryColor))
+                )
+            }
             IconButton(onClick = onToggleComplete) {
                 Icon(
                     imageVector = if (todo.isCompleted) Icons.Filled.CheckCircle

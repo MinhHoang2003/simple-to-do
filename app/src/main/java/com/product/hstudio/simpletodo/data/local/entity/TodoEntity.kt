@@ -1,11 +1,22 @@
 package com.product.hstudio.simpletodo.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.product.hstudio.simpletodo.domain.model.Priority
 import com.product.hstudio.simpletodo.domain.model.Todo
 
-@Entity(tableName = "todos")
+@Entity(
+    tableName = "todos",
+    foreignKeys = [ForeignKey(
+        entity = CategoryEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["categoryId"],
+        onDelete = ForeignKey.SET_NULL
+    )],
+    indices = [Index("categoryId")]
+)
 data class TodoEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
@@ -13,7 +24,8 @@ data class TodoEntity(
     val isCompleted: Boolean = false,
     val priority: String = Priority.MEDIUM.name,
     val dueDate: Long? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val categoryId: Int? = null
 )
 
 fun TodoEntity.toDomain() = Todo(
@@ -23,7 +35,8 @@ fun TodoEntity.toDomain() = Todo(
     isCompleted = isCompleted,
     priority = Priority.valueOf(priority),
     dueDate = dueDate,
-    createdAt = createdAt
+    createdAt = createdAt,
+    categoryId = categoryId
 )
 
 fun Todo.toEntity() = TodoEntity(
@@ -33,5 +46,6 @@ fun Todo.toEntity() = TodoEntity(
     isCompleted = isCompleted,
     priority = priority.name,
     dueDate = dueDate,
-    createdAt = createdAt
+    createdAt = createdAt,
+    categoryId = categoryId
 )

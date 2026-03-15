@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -51,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.product.hstudio.simpletodo.R
+import com.product.hstudio.simpletodo.domain.model.Category
 import com.product.hstudio.simpletodo.domain.model.Priority
 import com.product.hstudio.simpletodo.domain.model.Todo
 import java.time.Instant
@@ -63,6 +65,8 @@ import java.time.format.DateTimeFormatter
 fun AddEditTodoDialog(
     todo: Todo?,
     initialDueDate: Long? = null,
+    categories: List<Category> = emptyList(),
+    onCreateCategory: (Category) -> Unit = {},
     onDismiss: () -> Unit,
     onSave: (Todo) -> Unit
 ) {
@@ -87,9 +91,12 @@ fun AddEditTodoDialog(
     var title by remember { mutableStateOf(todo?.title ?: "") }
     var description by remember { mutableStateOf(todo?.description ?: "") }
     var priority by remember { mutableStateOf(todo?.priority ?: Priority.MEDIUM) }
+    var selectedCategoryId by remember { mutableStateOf(todo?.categoryId) }
     var titleError by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showCategoryPicker by remember { mutableStateOf(false) }
+    var showCreateCategory by remember { mutableStateOf(false) }
 
     val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -107,10 +114,30 @@ fun AddEditTodoDialog(
                     title = title.trim(),
                     description = description.trim(),
                     priority = priority,
-                    dueDate = finalDueDate
+                    dueDate = finalDueDate,
+                    categoryId = selectedCategoryId
                 )
             )
         }
+    }
+
+    // Category picker
+    if (showCategoryPicker) {
+        CategoryPickerSheet(
+            categories = categories,
+            selectedCategoryId = selectedCategoryId,
+            onCategorySelected = { selectedCategoryId = it },
+            onCreateCategory = { showCategoryPicker = false; showCreateCategory = true },
+            onDeleteCategory = {},
+            onDismiss = { showCategoryPicker = false }
+        )
+    }
+
+    if (showCreateCategory) {
+        CreateCategorySheet(
+            onSave = { onCreateCategory(it) },
+            onDismiss = { showCreateCategory = false }
+        )
     }
 
     // Date picker
@@ -268,6 +295,19 @@ fun AddEditTodoDialog(
                     clearDescription = stringResource(R.string.cd_clear_time)
                 )
             }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Category row
+            val selectedCategory = categories.find { it.id == selectedCategoryId }
+            ScheduleRow(
+                icon = Icons.Default.Label,
+                label = selectedCategory?.name ?: stringResource(R.string.set_category),
+                hasValue = selectedCategoryId != null,
+                onClick = { showCategoryPicker = true },
+                onClear = { selectedCategoryId = null },
+                clearDescription = stringResource(R.string.cd_clear_category)
+            )
 
             Spacer(Modifier.height(8.dp))
             HorizontalDivider()

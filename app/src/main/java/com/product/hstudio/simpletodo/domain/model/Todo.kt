@@ -7,5 +7,6 @@ data class Todo(
     val isCompleted: Boolean = false,
     val priority: Priority = Priority.MEDIUM,
     val dueDate: Long? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val categoryId: Int? = null
 )
