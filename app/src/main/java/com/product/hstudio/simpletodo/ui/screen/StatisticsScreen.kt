@@ -1,6 +1,9 @@
 package com.product.hstudio.simpletodo.ui.screen
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,9 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -28,9 +32,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -79,15 +87,22 @@ fun StatisticsScreen(
             item { PrioritySection(uiState) }
 
             item {
-                Text(
-                    text = stringResource(R.string.stat_daily_breakdown),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.stat_daily_breakdown),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    ChartLegend()
+                }
             }
 
-            if (uiState.totalTasks == 0) {
-                item {
+            item {
+                if (uiState.totalTasks == 0) {
                     Text(
                         text = stringResource(R.string.stat_no_tasks_month),
                         style = MaterialTheme.typography.bodyMedium,
@@ -95,10 +110,8 @@ fun StatisticsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
-                }
-            } else {
-                items(uiState.dailyStats.filter { it.total > 0 }) { stat ->
-                    DayStatRow(stat)
+                } else {
+                    DailyBarChart(uiState.dailyStats)
                 }
             }
 
@@ -249,34 +262,97 @@ private fun PriorityRow(label: String, count: Int, total: Int, color: Color) {
 }
 
 @Composable
-private fun DayStatRow(stat: DailyStat) {
-    val progress = if (stat.total > 0) stat.completed.toFloat() / stat.total else 0f
+private fun ChartLegend() {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
     Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        LegendDot(color = primaryColor, label = stringResource(R.string.stat_completed))
+        LegendDot(color = trackColor, label = stringResource(R.string.stat_total_tasks))
+    }
+}
+
+@Composable
+private fun LegendDot(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(color, CircleShape)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun DailyBarChart(dailyStats: List<DailyStat>) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val labelTextStyle = MaterialTheme.typography.labelSmall.copy(
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    val textMeasurer = rememberTextMeasurer()
+    val maxTotal = dailyStats.maxOfOrNull { it.total }?.coerceAtLeast(1) ?: 1
+
+    Canvas(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .height(160.dp)
     ) {
-        Text(
-            text = stat.day.toString(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(24.dp),
-            textAlign = TextAlign.End
-        )
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-        Text(
-            text = stringResource(R.string.progress_label, stat.completed, stat.total),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(56.dp),
-            textAlign = TextAlign.End
-        )
+        val labelHeight = 18.dp.toPx()
+        val chartHeight = size.height - labelHeight
+        val barAreaWidth = size.width / dailyStats.size
+        val barWidth = (barAreaWidth * 0.6f).coerceAtLeast(4f)
+        val barOffset = (barAreaWidth - barWidth) / 2
+        val minBarPx = 4.dp.toPx()
+        val cornerRadius = CornerRadius(3.dp.toPx())
+
+        dailyStats.forEachIndexed { index, stat ->
+            val x = index * barAreaWidth + barOffset
+
+            // Total bar (gray background)
+            val totalH = (stat.total.toFloat() / maxTotal * chartHeight)
+                .let { if (stat.total > 0) it.coerceAtLeast(minBarPx) else it }
+            if (totalH > 0f) {
+                drawRoundRect(
+                    color = trackColor,
+                    topLeft = Offset(x, chartHeight - totalH),
+                    size = Size(barWidth, totalH),
+                    cornerRadius = cornerRadius
+                )
+            }
+
+            // Completed bar (colored foreground)
+            val completedH = (stat.completed.toFloat() / maxTotal * chartHeight)
+                .let { if (stat.completed > 0) it.coerceAtLeast(minBarPx) else it }
+            if (completedH > 0f) {
+                drawRoundRect(
+                    color = primaryColor,
+                    topLeft = Offset(x, chartHeight - completedH),
+                    size = Size(barWidth, completedH),
+                    cornerRadius = cornerRadius
+                )
+            }
+
+            // Day labels: 1, 5, 10, 15, 20, 25, and last day
+            if (stat.day == 1 || stat.day % 5 == 0 || index == dailyStats.lastIndex) {
+                val measured = textMeasurer.measure(stat.day.toString(), labelTextStyle)
+                drawText(
+                    textLayoutResult = measured,
+                    topLeft = Offset(
+                        x = (x + barWidth / 2 - measured.size.width / 2)
+                            .coerceIn(0f, size.width - measured.size.width),
+                        y = chartHeight + 2.dp.toPx()
+                    )
+                )
+            }
+        }
     }
 }
